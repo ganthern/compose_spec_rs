@@ -1,6 +1,6 @@
 //! [`Options`] builder for deserialization options for a [`Compose`] file.
 
-use std::io::Read;
+use std::{collections::HashMap, io::Read};
 
 use crate::{Compose, YamlValue};
 
@@ -10,6 +10,8 @@ use crate::{Compose, YamlValue};
 pub struct Options {
     /// Whether to perform merging of `<<` keys.
     apply_merge: bool,
+    /// Whether to perform environment variable interpolation
+    interpolate_env: Option<HashMap<String, String>>,
 }
 
 impl Options {
@@ -49,10 +51,21 @@ impl Options {
         self
     }
 
+    /// set whether to interpolate TODO: write docs
+    pub fn interpolate_env(
+        &mut self,
+        interpolate_env: Option<HashMap<String, String>>,
+    ) -> &mut Self {
+        self.interpolate_env = interpolate_env;
+        self
+    }
     /// Return `true` if any options are set.
     const fn any(&self) -> bool {
-        let Self { apply_merge } = *self;
-        apply_merge
+        let Self {
+            apply_merge,
+            interpolate_env,
+        } = *self;
+        apply_merge || interpolate_env.is_some()
     }
 
     /// Use the set options to deserialize a [`Compose`] file from a string slice of YAML.
@@ -103,6 +116,7 @@ impl Options {
         if self.apply_merge {
             value.apply_merge()?;
         }
+        // TODO: here
         serde_yaml::from_value(value)
     }
 }
