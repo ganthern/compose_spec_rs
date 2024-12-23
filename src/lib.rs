@@ -98,6 +98,7 @@
 mod common;
 pub mod config;
 pub mod duration;
+mod environment_interpolation;
 mod include;
 mod name;
 pub mod network;

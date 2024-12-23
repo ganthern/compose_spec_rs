@@ -2,7 +2,7 @@
 
 use std::io::Read;
 
-use crate::{Compose, YamlValue};
+use crate::{environment_interpolation::EnvironmentResolver, Compose, YamlValue};
 
 /// Deserialization options builder for a [`Compose`] file.
 #[allow(missing_copy_implementations)] // Will include interpolation vars as a HashMap.
@@ -10,6 +10,8 @@ use crate::{Compose, YamlValue};
 pub struct Options {
     /// Whether to perform merging of `<<` keys.
     apply_merge: bool,
+    /// Whether to perform environment variable interpolation
+    interpolate_env: Option<EnvironmentResolver>,
 }
 
 impl Options {
@@ -49,10 +51,21 @@ impl Options {
         self
     }
 
+    /// set whether to interpolate TODO: write docs
+    pub fn with_interpolation(&mut self) -> &mut Self {
+        let mut resolver = EnvironmentResolver::new();
+        resolver.read_env();
+        self.interpolate_env = Some(resolver);
+        self
+    }
+
     /// Return `true` if any options are set.
     const fn any(&self) -> bool {
-        let Self { apply_merge } = *self;
-        apply_merge
+        let Self {
+            apply_merge,
+            interpolate_env,
+        } = self;
+        *apply_merge || interpolate_env.is_some()
     }
 
     /// Use the set options to deserialize a [`Compose`] file from a string slice of YAML.
@@ -100,9 +113,15 @@ impl Options {
     ///
     /// Returns an error if deserialization fails.
     pub fn from_yaml_value(&self, mut value: YamlValue) -> serde_yaml::Result<Compose> {
+        // according to the spec, environment interpolation is applied before the merge operation.
+        if let Some(vars) = &self.interpolate_env {
+            crate::environment_interpolation::interpolate_value(vars, &mut value)?;
+        }
+
         if self.apply_merge {
             value.apply_merge()?;
         }
+
         serde_yaml::from_value(value)
     }
 }
