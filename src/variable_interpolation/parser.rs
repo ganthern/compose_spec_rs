@@ -189,20 +189,21 @@ impl<'s> Parser<'s> {
                             modifier.replace(self.parse_modifier()?);
                             break;
                         }
-                        Some(&c) => {
-                            terminate!(self, "expected one of }}:?- , got {}", c);
+                        Some(&char) => {
+                            terminate!(self, "expected one of }}:?- , got {}", char);
                         }
                         None => terminate!(self, "input ended unexpectedly"),
                     }
                 }
-                Some(c) => {
-                    name.push(*c);
+                Some(char) => {
+                    name.push(*char);
                     self.rest.next();
                 }
                 None => terminate!(self, "input ended unexpectedly"),
             }
         }
 
+        #[allow(clippy::single_match_else)]
         let value: &str = match self.env.get(&name) {
             Some(value) => {
                 if value.is_empty() {
@@ -243,7 +244,7 @@ impl<'s> Parser<'s> {
     fn consume_whitespace(&mut self) {
         while self
             .rest
-            .next_if(|c: &char| char::is_whitespace(*c))
+            .next_if(|char: &char| char::is_whitespace(*char))
             .is_some()
         {}
     }

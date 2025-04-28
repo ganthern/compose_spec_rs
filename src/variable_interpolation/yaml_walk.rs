@@ -18,7 +18,7 @@ pub(crate) fn interpolate_value(
         YamlValue::Sequence(sequence) => interpolate_sequence(vars, sequence)?,
         YamlValue::Mapping(mapping) => interpolate_mapping(vars, mapping)?,
         _ => {}
-    };
+    }
     Ok(())
 }
 
